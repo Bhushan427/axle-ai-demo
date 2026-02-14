@@ -14,7 +14,7 @@ type MessageType =
   | { type: 'user'; text: string }
   | { type: 'ai'; text: string }
   | { type: 'loads'; loads: any[] }
-  | { type: 'bid-input'; loadId: number; loadRoute: string }
+  | { type: 'bid-input'; loadId: number | string; loadRoute: string }
   | { type: 'bid-confirmation'; bidAmount: number; loadRoute: string }
   | { type: 'my-bids'; bids: any[] }
   | { type: 'action-points'; awaitingArrival: any[]; uploadPOD: any[] }
@@ -69,8 +69,62 @@ const mockLoads = [
 ];
 
 async function fetchLoads(queryText: string) {
-  // TODO: replace with real API call; for now return mock data
-  return mockLoads;
+  const params = new URLSearchParams({
+    offset: "0",
+    status_list: "requested,in_enquiry",
+    origin_city_list: "DL_CENTRAL_DELHI",
+    truck_types: "closed",
+    axle_current_week_loads: "yes",
+    apply_100km_logic: "true",
+    limit: "5",
+    include_adhoc_intracity: "true",
+    loads_with_bid_active: "true",
+  });
+
+  const url = `/api/search-loads?${params.toString()}`;
+
+
+  const resp = await fetch(url);
+  const rawText = await resp.text(); // ✅ always read as text first
+
+  // Helpful debug (you can remove later)
+  console.log("fetchLoads status:", resp.status);
+  console.log("fetchLoads rawText (first 200):", rawText.slice(0, 200));
+
+  if (!resp.ok) {
+    throw new Error(`Proxy/API failed: ${resp.status}`);
+  }
+
+  // ✅ parse JSON safely
+  let json: any;
+  try {
+    json = JSON.parse(rawText);
+  } catch {
+    throw new Error("Could not parse JSON from proxy response");
+  }
+
+  // ✅ this is the correct path from your curl output
+  const list = json?.data?.result;
+
+  if (!Array.isArray(list)) {
+    console.log("fetchLoads parsed json keys:", Object.keys(json ?? {}));
+    throw new Error("Unexpected API response shape (data.result missing)");
+  }
+
+  // ✅ map into whatever your UI expects
+  return list
+    .slice(0, 5)
+    .map((x: any) => ({
+    id: x.req_truck_uuid ?? x.transaction_id ?? x.creation_time ?? crypto.randomUUID(),
+    route: { from: x.pickup_location ?? x.origin_city ?? x.origin ?? "-", to: x.destination ?? x.destination_city ?? "-" },
+    truckType: x.truck_type ?? x.req_truck_type ?? "-",
+    material: x.material_type ?? "-",
+    capacity: x.requested_capacity_mg != null ? `${x.requested_capacity_mg}T` : "-",
+    biddingEndTime: x.bidding_end_time ?? "open",
+    targetPrice: x.target_price ?? null,
+    status: x.status ?? "open",
+    loadType: (x.load_type === "delhivery" || x.load_type === "client" ? x.load_type : "marketplace") as "delhivery" | "client" | "marketplace",
+  }));
 }
 
 const mockBids = [
@@ -149,7 +203,7 @@ function App() {
   const [currentFlow, setCurrentFlow] = useState<'login' | 'main'>('login');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [awaitingOTP, setAwaitingOTP] = useState(false);
-  const [selectedLoadForBid, setSelectedLoadForBid] = useState<number | null>(null);
+  const [selectedLoadForBid, setSelectedLoadForBid] = useState<number | string | null>(null);
   const [selectedBidForRevise, setSelectedBidForRevise] = useState<any | null>(null);
   const [selectedLoadForVehicle, setSelectedLoadForVehicle] = useState<any | null>(null);
   const [contextualHelp, setContextualHelp] = useState<string[]>([]);
@@ -261,7 +315,7 @@ function App() {
     }
   };
 
-  const handlePlaceBid = (loadId: number, loadRoute: string) => {
+  const handlePlaceBid = (loadId: number | string, loadRoute: string) => {
     setSelectedLoadForBid(loadId);
     addMessage({ type: 'user', text: `Place bid on Load #${loadId}` });
     setTimeout(() => {
