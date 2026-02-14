@@ -68,6 +68,11 @@ const mockLoads = [
   },
 ];
 
+async function fetchLoads(queryText: string) {
+  // TODO: replace with real API call; for now return mock data
+  return mockLoads;
+}
+
 const mockBids = [
   {
     id: 1,
@@ -200,9 +205,14 @@ function App() {
       setTimeout(() => {
         addMessage({ type: 'ai', text: 'Here are the available loads:' });
       }, 500);
-      setTimeout(() => {
-        addMessage({ type: 'loads', loads: mockLoads });
-        setContextualHelp(['Place Bid', 'Search Load']);
+      setTimeout(async () => {
+        try {
+          const loads = await fetchLoads(text);
+          addMessage({ type: 'loads', loads });
+          setContextualHelp(['Place Bid', 'Search Load']);
+        } catch {
+          addMessage({ type: 'ai', text: 'Sorry, we couldn\'t fetch loads. Please try again.' });
+        }
       }, 1000);
     } else if (lowerText.includes('show') && (lowerText.includes('bid') || lowerText.includes('bids'))) {
       setTimeout(() => {
