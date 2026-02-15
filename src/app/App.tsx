@@ -68,63 +68,37 @@ const mockLoads = [
   },
 ];
 
-async function fetchLoads(queryText: string) {
-  const params = new URLSearchParams({
-    offset: "0",
-    status_list: "requested,in_enquiry",
-    origin_city_list: "DL_CENTRAL_DELHI",
-    truck_types: "closed",
-    axle_current_week_loads: "yes",
-    apply_100km_logic: "true",
-    limit: "5",
-    include_adhoc_intracity: "true",
-    loads_with_bid_active: "true",
+async function fetchLoads(queryText: string, history: any[] = []) {
+  const res = await fetch("http://localhost:8787/api/ai", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ text: queryText, history }),
   });
 
-  const url = `/api/search-loads?${params.toString()}`;
+  if (!res.ok) throw new Error(`AI request failed: ${res.status}`);
+  const data = await res.json();
 
+  if (data.kind === "loads") return data.loads;          // ✅ array of cards
+  throw new Error(data.text || "AI did not return loads");
+}
 
-  const resp = await fetch(url);
-  const rawText = await resp.text(); // ✅ always read as text first
+async function callAI(
+  text: string,
+  history: Array<{ role: "user" | "ai"; text: string }>
+) {
+  const r = await fetch("http://localhost:8787/api/ai", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ text, history }),
+  });
 
-  // Helpful debug (you can remove later)
-  console.log("fetchLoads status:", resp.status);
-  console.log("fetchLoads rawText (first 200):", rawText.slice(0, 200));
-
-  if (!resp.ok) {
-    throw new Error(`Proxy/API failed: ${resp.status}`);
-  }
-
-  // ✅ parse JSON safely
-  let json: any;
-  try {
-    json = JSON.parse(rawText);
-  } catch {
-    throw new Error("Could not parse JSON from proxy response");
-  }
-
-  // ✅ this is the correct path from your curl output
-  const list = json?.data?.result;
-
-  if (!Array.isArray(list)) {
-    console.log("fetchLoads parsed json keys:", Object.keys(json ?? {}));
-    throw new Error("Unexpected API response shape (data.result missing)");
-  }
-
-  // ✅ map into whatever your UI expects
-  return list
-    .slice(0, 5)
-    .map((x: any) => ({
-    id: x.req_truck_uuid ?? x.transaction_id ?? x.creation_time ?? crypto.randomUUID(),
-    route: { from: x.pickup_location ?? x.origin_city ?? x.origin ?? "-", to: x.destination ?? x.destination_city ?? "-" },
-    truckType: x.truck_type ?? x.req_truck_type ?? "-",
-    material: x.material_type ?? "-",
-    capacity: x.requested_capacity_mg != null ? `${x.requested_capacity_mg}T` : "-",
-    biddingEndTime: x.bidding_end_time ?? "open",
-    targetPrice: x.target_price ?? null,
-    status: x.status ?? "open",
-    loadType: (x.load_type === "delhivery" || x.load_type === "client" ? x.load_type : "marketplace") as "delhivery" | "client" | "marketplace",
-  }));
+  if (!r.ok) throw new Error(await r.text());
+  return r.json() as Promise<
+    | { kind: "text"; text: string }
+    | { kind: "loads"; preface: string; loads: any[] }
+    | { kind: "my_bids"; text: string; bids: any[] }
+    | { kind: "action_points"; text: string; awaitingArrival: any[]; uploadPOD: any[] }
+  >;
 }
 
 const mockBids = [
@@ -224,7 +198,7 @@ function App() {
     ]);
   };
 
-  const handleUserMessage = (text: string) => {
+  const handleUserMessage = async (text: string) => {
     addMessage({ type: 'user', text });
 
     // Handle login flow
@@ -248,70 +222,44 @@ function App() {
       return;
     }
 
-    // Handle main conversation flows
-    const lowerText = text.toLowerCase();
+    // Build small chat history for AI (only text bubbles)
+    const history: Array<{ role: "user" | "ai"; text: string }> = messages
+      .filter((m) => m.content.type === "user" || m.content.type === "ai")
+      .slice(-8)
+      .map((m) => ({
+        role: (m.content.type === "user" ? "user" : "ai") as "user" | "ai",
+        text: (m.content as { text: string }).text,
+      }));
 
-    if (lowerText.includes('search load') || lowerText.includes('find load')) {
-      setTimeout(() => {
-        addMessage({ type: 'ai', text: 'Please tell me vehicle type and tonnage.' });
-      }, 500);
-    } else if (lowerText.includes('closed truck') || lowerText.includes('7.5 ton')) {
-      setTimeout(() => {
-        addMessage({ type: 'ai', text: 'Here are the available loads:' });
-      }, 500);
-      setTimeout(async () => {
-        try {
-          const loads = await fetchLoads(text);
-          addMessage({ type: 'loads', loads });
-          setContextualHelp(['Place Bid', 'Search Load']);
-        } catch {
-          addMessage({ type: 'ai', text: 'Sorry, we couldn\'t fetch loads. Please try again.' });
-        }
-      }, 1000);
-    } else if (lowerText.includes('show') && (lowerText.includes('bid') || lowerText.includes('bids'))) {
-      setTimeout(() => {
-        addMessage({ type: 'ai', text: 'Here are all loads where you have placed bids:' });
-      }, 500);
-      setTimeout(() => {
-        addMessage({ type: 'my-bids', bids: mockBids });
-        setContextualHelp(['Revise Bid', 'Attach Vehicle', 'Search Load']);
-      }, 1000);
-    } else if (lowerText.includes('action point')) {
-      setTimeout(() => {
-        addMessage({ type: 'ai', text: 'Here are your action points:' });
-      }, 500);
-      setTimeout(() => {
+    try {
+      const result = await callAI(text, history);
+
+      if (result.kind === "text") {
+        addMessage({ type: "ai", text: result.text });
+        return;
+      }
+
+      if (result.kind === "my_bids") {
+        addMessage({ type: "ai", text: result.text || "Here are your bids:" });
+        addMessage({ type: "my-bids", bids: result.bids || [] });
+        return;
+      }
+
+      if (result.kind === "action_points") {
+        addMessage({ type: "ai", text: result.text || "Here are your action points:" });
         addMessage({
-          type: 'action-points',
-          awaitingArrival: mockActionPointsAwaitingArrival,
-          uploadPOD: mockActionPointsUploadPOD,
+          type: "action-points",
+          awaitingArrival: result.awaitingArrival || [],
+          uploadPOD: result.uploadPOD || [],
         });
-        setContextualHelp(['Attach Vehicle', 'Upload POD']);
-      }, 1000);
-    } else if (lowerText.includes('attach vehicle')) {
-      setTimeout(() => {
-        addMessage({ type: 'ai', text: 'Here are the loads awaiting vehicle attachment. Please select one:' });
-      }, 500);
-      setTimeout(() => {
-        addMessage({ type: 'my-bids', bids: mockActionPointsAwaitingArrival.map(load => ({ ...load, bidStatus: 'won' })) });
-        setContextualHelp(['Attach Vehicle']);
-      }, 1000);
-    } else if (lowerText.includes('help') || lowerText.includes('what can you do')) {
-      setTimeout(() => {
-        addMessage({ type: 'ai', text: 'I can help you with:\n• Search loads\n• Show my bids\n• View action points\n• Attach vehicles\n\nWhat would you like to do?' });
-      }, 500);
-      setTimeout(() => {
-        addMessage({ type: 'quick-actions' });
-        setContextualHelp(['Search Load']);
-      }, 1000);
-    } else {
-      setTimeout(() => {
-        addMessage({ type: 'ai', text: 'I didn\'t quite understand that. Here are some things I can help with:' });
-      }, 500);
-      setTimeout(() => {
-        addMessage({ type: 'quick-actions' });
-        setContextualHelp(['Search Load']);
-      }, 1000);
+        return;
+      }
+
+      // default: kind === "loads"
+      addMessage({ type: "ai", text: result.preface || "Here are the available loads:" });
+      addMessage({ type: "loads", loads: result.loads });
+    } catch (e: any) {
+      addMessage({ type: "ai", text: "Sorry, something went wrong. Please try again." });
     }
   };
 
