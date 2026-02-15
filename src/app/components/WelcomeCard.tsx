@@ -3,7 +3,7 @@ import { Truck, MessageSquare, Sparkles } from 'lucide-react';
 
 export function WelcomeCard() {
   return (
-    <div className="bg-gradient-to-br from-[#FF4D00] to-[#E64500] rounded-2xl p-6 mb-4 text-white shadow-lg">
+    <div className="bg-gradient-to-br from-[#ED4136] to-[#ED4136] rounded-2xl p-6 mb-4 text-white shadow-lg">
       <div className="flex items-center gap-2 mb-3">
         <Sparkles className="w-6 h-6" />
         <h2 className="font-bold text-[18px]">Welcome to Axle AI</h2>

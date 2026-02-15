@@ -52,7 +52,7 @@ export function LoadCard({
                 </span>
               )}
               {loadType === 'client' && (
-                <span className="text-[11px] bg-orange-50 text-orange-700 px-2 py-0.5 rounded">
+                <span className="text-[11px] bg-[#ED4136]/10 text-[#ED4136] px-2 py-0.5 rounded">
                   👤 Client Load
                 </span>
               )}

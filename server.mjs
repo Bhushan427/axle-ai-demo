@@ -200,15 +200,22 @@ function sanitizeParams(p = {}) {
 // ---- NEW: AI router endpoint ----
 app.post("/api/ai", async (req, res) => {
   try {
-    const { text, history = [] } = req.body ?? {};
+    const { text, history = [], lang = "en" } = req.body ?? {};
     if (!text || typeof text !== "string") {
       return res.status(400).json({ error: "Missing text" });
     }
 
     const compactHistory = Array.isArray(history) ? history.slice(-8) : [];
 
+    const languageRule =
+      lang === "hi"
+        ? "ReplyText MUST be in Hindi (Devanagari). Keep it simple, natural Hindi."
+        : "ReplyText MUST be in English.";
+
     const systemPrompt = `
 You are an assistant for the Axle chat UI.
+
+${languageRule}
 
 You must pick ONE action:
 1) search_loads  -> user wants to search/find loads (origin/destination/truck/tonnage)

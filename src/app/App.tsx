@@ -84,12 +84,13 @@ async function fetchLoads(queryText: string, history: any[] = []) {
 
 async function callAI(
   text: string,
-  history: Array<{ role: "user" | "ai"; text: string }>
+  history: Array<{ role: "user" | "ai"; text: string }>,
+  lang: "en" | "hi"
 ) {
   const r = await fetch("http://localhost:8787/api/ai", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ text, history }),
+    body: JSON.stringify({ text, history, lang }), // ✅ send lang
   });
 
   if (!r.ok) throw new Error(await r.text());
@@ -181,6 +182,7 @@ function App() {
   const [selectedBidForRevise, setSelectedBidForRevise] = useState<any | null>(null);
   const [selectedLoadForVehicle, setSelectedLoadForVehicle] = useState<any | null>(null);
   const [contextualHelp, setContextualHelp] = useState<string[]>([]);
+  const [lang, setLang] = useState<"en" | "hi">("en");
 
   const chatContainerRef = useRef<HTMLDivElement>(null);
 
@@ -208,7 +210,7 @@ function App() {
         setTimeout(() => {
           addMessage({ type: 'ai', text: 'Please enter the OTP sent to your phone.' });
         }, 500);
-      } else if (awaitingOTP && (text.includes('789678') || text.match(/^\d{6}$/))) {
+      } else if (awaitingOTP && (text.includes('123456') || text.match(/^\d{6}$/))) {
         setIsLoggedIn(true);
         setCurrentFlow('main');
         setTimeout(() => {
@@ -232,7 +234,7 @@ function App() {
       }));
 
     try {
-      const result = await callAI(text, history);
+      const result = await callAI(text, history, lang);
 
       if (result.kind === "text") {
         addMessage({ type: "ai", text: result.text });
@@ -363,19 +365,41 @@ function App() {
       <div className="bg-white border-b border-gray-200 px-4 sm:px-5 py-4 flex-shrink-0 shadow-sm">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 bg-[#FF4D00] rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-[16px]">A</span>
-            </div>
+            <img
+              src="/axle-logo.png"
+              alt="Axle by Delhivery"
+              className="h-9 w-auto object-contain"
+            />
             <div>
-              <h1 className="font-bold text-gray-900 text-[18px]">Axle AI</h1>
               <p className="text-gray-500 text-[12px]">
                 {isLoggedIn ? 'Managing your loads' : 'Fleet Management Assistant'}
               </p>
             </div>
           </div>
           {isLoggedIn && (
-            <div className="w-9 h-9 bg-gray-100 rounded-full flex items-center justify-center border border-gray-200">
-              <User className="w-4 h-4 text-gray-600" />
+            <div className="flex items-center gap-2">
+              <div className="flex bg-gray-100 rounded-full p-1 border border-gray-200">
+                <button
+                  onClick={() => setLang("en")}
+                  className={`px-3 py-1 rounded-full text-[12px] font-medium transition-colors ${
+                    lang === "en" ? "bg-white text-gray-900 shadow-sm" : "text-gray-600 hover:text-gray-900"
+                  }`}
+                >
+                  EN
+                </button>
+                <button
+                  onClick={() => setLang("hi")}
+                  className={`px-3 py-1 rounded-full text-[12px] font-medium transition-colors ${
+                    lang === "hi" ? "bg-white text-gray-900 shadow-sm" : "text-gray-600 hover:text-gray-900"
+                  }`}
+                >
+                  HI
+                </button>
+              </div>
+
+              <div className="w-9 h-9 bg-gray-100 rounded-full flex items-center justify-center border border-gray-200">
+                <User className="w-4 h-4 text-gray-600" />
+              </div>
             </div>
           )}
         </div>
@@ -598,6 +622,7 @@ function App() {
         onSend={handleUserMessage} 
         contextualHelp={contextualHelp}
         onContextualClick={handleContextualClick}
+        lang={lang}
       />
     </div>
   );

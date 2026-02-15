@@ -7,6 +7,7 @@ interface ChatInputProps {
   disabled?: boolean;
   contextualHelp?: string[];
   onContextualClick?: (action: string) => void;
+  lang?: "en" | "hi"; // ✅ add this
 }
 
 export function ChatInput({
@@ -15,6 +16,7 @@ export function ChatInput({
   disabled,
   contextualHelp = [],
   onContextualClick,
+  lang = "en", // ✅ default
 }: ChatInputProps) {
   const [message, setMessage] = useState("");
   const [isListening, setIsListening] = useState(false);
@@ -37,7 +39,7 @@ export function ChatInput({
     }
   };
 
-  const startVoice = (lang: string = "en-IN") => {
+  const startVoice = () => {
     if (!SpeechRecognition) {
       alert("Voice input not supported. Please use Chrome.");
       return;
@@ -51,7 +53,7 @@ export function ChatInput({
     const rec = new SpeechRecognition();
     recognitionRef.current = rec;
 
-    rec.lang = lang; // later we can switch to hi-IN etc.
+    rec.lang = lang === "hi" ? "hi-IN" : "en-IN";
     rec.interimResults = true;
     rec.continuous = false;
 
@@ -79,7 +81,7 @@ export function ChatInput({
   const toggleVoice = () => {
     if (disabled) return;
     if (isListening) stopVoice();
-    else startVoice("en-IN");
+    else startVoice();
   };
 
   return (
@@ -91,7 +93,7 @@ export function ChatInput({
             <button
               key={index}
               onClick={() => onContextualClick?.(help)}
-              className="bg-orange-50 text-[#FF4D00] px-3 py-1.5 rounded-full text-[12px] font-medium hover:bg-orange-100 transition-colors border border-orange-200 flex items-center gap-1"
+              className="bg-[#ED4136]/10 text-[#ED4136] px-3 py-1.5 rounded-full text-[12px] font-medium hover:bg-[#ED4136]/15 transition-colors border border-[#ED4136]/40 flex items-center gap-1"
             >
               <span>→</span>
               <span>{help}</span>
@@ -117,7 +119,7 @@ export function ChatInput({
             onClick={toggleVoice}
             disabled={disabled}
             className={`ml-2 ${
-              isListening ? "text-[#FF4D00]" : "text-gray-400 hover:text-gray-600"
+              isListening ? "text-[#ED4136]" : "text-gray-400 hover:text-gray-600"
             } disabled:opacity-40 disabled:cursor-not-allowed`}
             aria-label={isListening ? "Stop voice input" : "Voice input"}
             title={isListening ? "Stop recording" : "Start voice input"}
@@ -129,7 +131,7 @@ export function ChatInput({
         <button
           onClick={handleSend}
           disabled={!message.trim() || disabled}
-          className="bg-[#FF4D00] text-white p-3 rounded-full hover:bg-[#E64500] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          className="bg-[#ED4136] text-white p-3 rounded-full hover:opacity-90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           aria-label="Send message"
         >
           <Send className="w-5 h-5" />

@@ -40,7 +40,7 @@ export function VehicleAttachForm({ route, onSubmit, onCancel }: VehicleAttachFo
               value={formData.driverName}
               onChange={(e) => setFormData({ ...formData, driverName: e.target.value })}
               placeholder="Enter driver name"
-              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl text-[14px] focus:outline-none focus:ring-2 focus:ring-[#FF4D00] focus:border-transparent"
+              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl text-[14px] focus:outline-none focus:ring-2 focus:ring-[#ED4136] focus:border-transparent"
               required
             />
           </div>
@@ -57,7 +57,7 @@ export function VehicleAttachForm({ route, onSubmit, onCancel }: VehicleAttachFo
               value={formData.driverMobile}
               onChange={(e) => setFormData({ ...formData, driverMobile: e.target.value })}
               placeholder="Enter mobile number"
-              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl text-[14px] focus:outline-none focus:ring-2 focus:ring-[#FF4D00] focus:border-transparent"
+              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl text-[14px] focus:outline-none focus:ring-2 focus:ring-[#ED4136] focus:border-transparent"
               required
             />
           </div>
@@ -74,7 +74,7 @@ export function VehicleAttachForm({ route, onSubmit, onCancel }: VehicleAttachFo
               value={formData.vehicleNumber}
               onChange={(e) => setFormData({ ...formData, vehicleNumber: e.target.value.toUpperCase() })}
               placeholder="BR33CX7391"
-              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl text-[14px] uppercase focus:outline-none focus:ring-2 focus:ring-[#FF4D00] focus:border-transparent"
+              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl text-[14px] uppercase focus:outline-none focus:ring-2 focus:ring-[#ED4136] focus:border-transparent"
               required
             />
           </div>

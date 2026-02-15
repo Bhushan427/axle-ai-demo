@@ -12,7 +12,7 @@ export function ChatBubble({ message, isUser = false, timestamp }: ChatBubblePro
       <div
         className={`max-w-[80%] rounded-2xl px-4 py-3 ${
           isUser
-            ? 'bg-[#FF4D00] text-white rounded-br-md'
+            ? 'bg-[#ED4136] text-white rounded-br-md'
             : 'bg-white text-gray-800 rounded-bl-md shadow-sm border border-gray-100'
         }`}
       >

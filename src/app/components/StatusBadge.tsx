@@ -11,7 +11,7 @@ interface StatusBadgeProps {
 const statusStyles: Record<string, string> = {
   'open': 'bg-blue-50 text-blue-700 border border-blue-200',
   'cancelled': 'bg-gray-100 text-gray-600 border border-gray-300',
-  'awaiting-arrival': 'bg-orange-50 text-orange-700 border border-orange-200',
+  'awaiting-arrival': 'bg-[#ED4136]/10 text-[#ED4136] border border-[#ED4136]/40',
   'in-transit': 'bg-green-50 text-green-700 border border-green-200',
   'unloaded': 'bg-purple-50 text-purple-700 border border-purple-200',
   'closed': 'bg-gray-100 text-gray-600 border border-gray-300',
@@ -19,7 +19,7 @@ const statusStyles: Record<string, string> = {
   'awaiting': 'bg-gray-100 text-gray-600 border border-gray-300',
   'won': 'bg-green-50 text-green-700 border border-green-200',
   'lost': 'bg-red-50 text-red-700 border border-red-200',
-  'revised': 'bg-orange-50 text-orange-700 border border-orange-200',
+  'revised': 'bg-[#ED4136]/10 text-[#ED4136] border border-[#ED4136]/40',
 };
 
 export function StatusBadge({ status, label }: StatusBadgeProps) {

@@ -13,7 +13,7 @@ export function DemoInstructions() {
           </p>
           <div className="bg-white/60 rounded-lg p-2 text-[12px] space-y-1 font-mono">
             <p className="text-blue-900"><strong>Mobile:</strong> 7718896629</p>
-            <p className="text-blue-900"><strong>OTP:</strong> 789678</p>
+            <p className="text-blue-900"><strong>OTP:</strong> 123456</p>
           </div>
         </div>
       </div>

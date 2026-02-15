@@ -21,10 +21,10 @@ export function QuickActions({ onActionClick }: QuickActionsProps) {
           <button
             key={action.id}
             onClick={() => onActionClick(action.text)}
-            className="bg-white border border-gray-200 rounded-xl p-3 hover:border-[#FF4D00] hover:bg-orange-50 transition-all group"
+            className="bg-white border border-gray-200 rounded-xl p-3 hover:border-[#ED4136] hover:bg-[#ED4136]/10 transition-all group"
           >
             <div className="flex items-center gap-2 mb-1">
-              <action.icon className="w-4 h-4 text-gray-600 group-hover:text-[#FF4D00]" />
+              <action.icon className="w-4 h-4 text-gray-600 group-hover:text-[#ED4136]" />
               <span className="font-medium text-gray-900 text-[13px]">{action.label}</span>
             </div>
           </button>
