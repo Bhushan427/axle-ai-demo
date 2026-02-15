@@ -69,7 +69,7 @@ const mockLoads = [
 ];
 
 async function fetchLoads(queryText: string, history: any[] = []) {
-  const res = await fetch("http://localhost:8787/api/ai", {
+  const res = await fetch("/api/ai", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ text: queryText, history }),
@@ -87,7 +87,7 @@ async function callAI(
   history: Array<{ role: "user" | "ai"; text: string }>,
   lang: "en" | "hi"
 ) {
-  const r = await fetch("http://localhost:8787/api/ai", {
+  const r = await fetch("/api/ai", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ text, history, lang }), // ✅ send lang
