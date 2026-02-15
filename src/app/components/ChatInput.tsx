@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Send, Mic } from 'lucide-react';
+import React, { useRef, useState } from "react";
+import { Send, Mic } from "lucide-react";
 
 interface ChatInputProps {
   onSend: (message: string) => void;
@@ -9,27 +9,77 @@ interface ChatInputProps {
   onContextualClick?: (action: string) => void;
 }
 
-export function ChatInput({ 
-  onSend, 
-  placeholder = 'Type or speak...', 
+export function ChatInput({
+  onSend,
+  placeholder = "Type or speak...",
   disabled,
   contextualHelp = [],
-  onContextualClick 
+  onContextualClick,
 }: ChatInputProps) {
-  const [message, setMessage] = useState('');
+  const [message, setMessage] = useState("");
+  const [isListening, setIsListening] = useState(false);
+  const recognitionRef = useRef<any>(null);
+
+  const SpeechRecognition =
+    (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
 
   const handleSend = () => {
     if (message.trim()) {
       onSend(message.trim());
-      setMessage('');
+      setMessage("");
     }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSend();
     }
+  };
+
+  const startVoice = (lang: string = "en-IN") => {
+    if (!SpeechRecognition) {
+      alert("Voice input not supported. Please use Chrome.");
+      return;
+    }
+
+    // Stop any previous instance
+    try {
+      recognitionRef.current?.stop?.();
+    } catch {}
+
+    const rec = new SpeechRecognition();
+    recognitionRef.current = rec;
+
+    rec.lang = lang; // later we can switch to hi-IN etc.
+    rec.interimResults = true;
+    rec.continuous = false;
+
+    rec.onstart = () => setIsListening(true);
+    rec.onend = () => setIsListening(false);
+    rec.onerror = () => setIsListening(false);
+
+    rec.onresult = (event: any) => {
+      const transcript = Array.from(event.results)
+        .map((r: any) => r[0]?.transcript ?? "")
+        .join("");
+
+      setMessage(transcript);
+    };
+
+    rec.start();
+  };
+
+  const stopVoice = () => {
+    try {
+      recognitionRef.current?.stop?.();
+    } catch {}
+  };
+
+  const toggleVoice = () => {
+    if (disabled) return;
+    if (isListening) stopVoice();
+    else startVoice("en-IN");
   };
 
   return (
@@ -49,7 +99,7 @@ export function ChatInput({
           ))}
         </div>
       )}
-      
+
       <div className="flex items-center gap-2">
         <div className="flex-1 flex items-center bg-gray-100 rounded-full px-4 py-3">
           <input
@@ -61,14 +111,21 @@ export function ChatInput({
             disabled={disabled}
             className="flex-1 bg-transparent outline-none text-[15px] text-gray-800 placeholder:text-gray-400"
           />
+
           <button
-            onClick={() => {}}
-            className="text-gray-400 hover:text-gray-600 ml-2"
-            aria-label="Voice input"
+            type="button"
+            onClick={toggleVoice}
+            disabled={disabled}
+            className={`ml-2 ${
+              isListening ? "text-[#FF4D00]" : "text-gray-400 hover:text-gray-600"
+            } disabled:opacity-40 disabled:cursor-not-allowed`}
+            aria-label={isListening ? "Stop voice input" : "Voice input"}
+            title={isListening ? "Stop recording" : "Start voice input"}
           >
             <Mic className="w-5 h-5" />
           </button>
         </div>
+
         <button
           onClick={handleSend}
           disabled={!message.trim() || disabled}
