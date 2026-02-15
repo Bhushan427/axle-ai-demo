@@ -1,5 +1,7 @@
 import express from "express";
 import OpenAI from "openai";
+import path from "path";
+import { fileURLToPath } from "url";
 
 const app = express();
 app.use(express.json());
@@ -372,4 +374,14 @@ Return ONLY JSON that matches the schema.
   }
 });
 
-app.listen(8787, () => console.log("Axle proxy running on http://localhost:8787"));
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Serve Vite build
+app.use(express.static(path.join(__dirname, "dist")));
+app.get(/.*/, (req, res) => {
+  res.sendFile(path.join(__dirname, "dist", "index.html"));
+});
+
+const PORT = process.env.PORT || 8787;
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
